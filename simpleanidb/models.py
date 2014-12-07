@@ -68,11 +68,11 @@ class Anime(object):
         if xml.find("picture") is not None:
             self.picture = Picture(self, xml.find("picture"))
         if xml.find("ratings") is not None:
-            if xml.find("ratings").find("permanent"):
+            if xml.find("ratings").find("permanent") is not None:
                 self.rating_permanent = xml.find("ratings").find("permanent").text
-            if xml.find("ratings").find("temporary"):
+            if xml.find("ratings").find("temporary") is not None:
                 self.rating_temporary = xml.find("ratings").find("temporary").text
-            if xml.find("ratings").find("review"):
+            if xml.find("ratings").find("review") is not None:
                 self.rating_review = xml.find("ratings").find("review").text
         if xml.find("categories") is not None:
             self.categories = [Category(self, c) for c in xml.find("categories")]
