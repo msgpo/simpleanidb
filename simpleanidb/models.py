@@ -11,7 +11,19 @@ class Anime(object):
         self.anidb = anidb
         self.id = id
         self.titles = []
-        self.episodes = []
+        self.synonyms = []
+        self.all_episodes = []
+        self.episodes = {}
+        self.picture = None
+        self.rating_permanent = None
+        self.rating_temporary = None
+        self.rating_review = None
+        self.categories = []
+        self.tags = []
+        self.start_date = None
+        self.end_date = None
+        self.description = None
+
         if xml:
             self.fill_from_xml(xml)
 
@@ -49,23 +61,47 @@ class Anime(object):
         else:
             self.titles = [Title(self, n) for n in xml.findall("title")]
             return
-        self.all_episodes = sorted([Episode(self, n) for n in xml.find("episodes")])
-        self.episodes = {e.number:e for e in self.all_episodes if e.type == 1}
-        self.picture = Picture(self, xml.find("picture"))
-        self.start_date = date_to_date(xml.find("startdate").text)
-        self.end_date = date_to_date(xml.find("enddate").text)
-        self.description = xml.find("description").text
+        self.synonyms = [t for t in self.titles if t.type == "synonym"]
+        if xml.find("episodes") is not None:
+            self.all_episodes = sorted([Episode(self, n) for n in xml.find("episodes")])
+            self.episodes = {e.number:e for e in self.all_episodes if e.type == 1}
+        if xml.find("picture") is not None:
+            self.picture = Picture(self, xml.find("picture"))
+        if xml.find("ratings") is not None:
+            if xml.find("ratings").find("permanent"):
+                self.rating_permanent = xml.find("ratings").find("permanent").text
+            if xml.find("ratings").find("temporary"):
+                self.rating_temporary = xml.find("ratings").find("temporary").text
+            if xml.find("ratings").find("review"):
+                self.rating_review = xml.find("ratings").find("review").text
+        if xml.find("categories") is not None:
+            self.categories = [Category(self, c) for c in xml.find("categories")]
+        if xml.find("tags") is not None:
+            self.tags = sorted([Tag(self, t) for t in xml.find("tags")])
+        if xml.find("startdate") is not None:
+            self.start_date = date_to_date(xml.find("startdate").text)
+        if xml.find("enddate") is not None:
+            self.end_date = date_to_date(xml.find("enddate").text)
+        if xml.find("description") is not None:
+            self.description = xml.find("description").text
+
 
     @property
     def title(self):
-        return self.get_title()
+        return self.get_title("main")
 
-    def get_title(self, lang=None):
+    def get_title(self, type=None, lang=None):
+        if not type:
+            type = "main"
+        for t in self.titles:
+            if t.type == type:
+                return t
         if not lang:
             lang = self.anidb.lang
         for t in self.titles:
             if t.lang == lang:
                 return t
+
 
 class BaseAttribute(object):
 
@@ -82,12 +118,43 @@ class BaseAttribute(object):
             unicode(self)
         )
 
+class Category(BaseAttribute):
+
+    def __init__(self, anime, xml_node):
+        super(Category, self).__init__(anime, xml_node)
+        self.id = self._xml.attrib["id"]
+        self.hentai = self._xml.attrib["hentai"] == "true"
+        self.weigth = self._xml.attrib["weight"]
+        self.name = self._xml.find("name").text
+        self.description = self._xml.find("description").text
+
+class Tag(BaseAttribute):
+
+    def __init__(self, anime, xml_node):
+        super(Tag, self).__init__(anime, xml_node)
+        self.id = self._xml.attrib["id"]
+        self.spoiler = self._xml.attrib["spoiler"] == "true"
+        self.localspoiler = self._xml.attrib["localspoiler"] == "true"
+        self.globalspoiler = self._xml.attrib["globalspoiler"] == "true"
+        self.update = date_to_date(self._xml.attrib["update"])
+        self.name = self._xml.find("name").text
+        self.description = None
+        if self._xml.find("description") is not None:
+            self.description = self._xml.find("description").text
+        self.count = int(self._xml.find("count").text)
+
+    def __cmp__(self, other):
+        if self.count > other.count:
+            return 1
+        return -1
+
 class Title(BaseAttribute):
 
     def __init__(self, anime, xml_node):
         super(Title, self).__init__(anime, xml_node)
         # apperently xml:lang is "{http://www.w3.org/XML/1998/namespace}lang"
         self.lang = self._xml.attrib["{http://www.w3.org/XML/1998/namespace}lang"]
+        self.type = self._xml.attrib.get("type")
 
 class Picture(BaseAttribute):
 

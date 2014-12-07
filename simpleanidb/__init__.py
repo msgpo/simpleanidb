@@ -53,8 +53,6 @@ class Anidb(object):
                 if term in title.text.lower():
                     anime_ids.append((int(anime.get("aid")), anime))
                     break
-        if not anime_ids:
-            return LookupError("Nothing found under '%s'" % term)
         return [Anime(self, aid, False, xml_node) for aid, xml_node in anime_ids]
 
     def anime(self, aid):
