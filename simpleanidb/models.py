@@ -125,7 +125,7 @@ class BaseAttribute(object):
         """
         for attr in attrs:
             value = self._xml.attrib.get(attr)
-            setattr(self, attr, value is not None and value == "true")
+            setattr(self, attr, value is not None and value.lower() == "true")
 
     def _texts(self, *attrs):
         """Set the text values of the given attributes.
@@ -159,12 +159,12 @@ class Tag(BaseAttribute):
 
     def __init__(self, anime, xml_node):
         super(Tag, self).__init__(anime, xml_node)
-        self._attributes('id', 'update')
+        self._attributes('id', 'update', 'weight')
         if self.update:
             self.update = date_to_date(self.update)
 
-        self._booleans('spoiler', 'localspoiler', 'globalspoiler')
-        self._texts('name', 'description', 'weight')
+        self._booleans('spoiler', 'localspoiler', 'globalspoiler', 'verified')
+        self._texts('name', 'description')
         self.count = int(self.weight) if self.weight else 0
         """The importance of this tag."""
 
@@ -197,6 +197,7 @@ class Episode(BaseAttribute):
         super(Episode, self).__init__(anime, xml_node)
         self._attributes('id')
         self._texts('airdate', 'length', 'epno')
+        self.airdate = date_to_date(self.airdate)
 
         self.titles = [Title(self, n) for n in self._xml.findall("title")]
         self.type = int(self._xml.find("epno").attrib["type"])
