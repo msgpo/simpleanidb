@@ -1,52 +1,56 @@
 import pytest
-from lxml import etree
-from datetime import date
 
-from simpleanidb import (
-    Anidb, BaseAttribute, Title, Tag, Category, Picture, Episode
-)
+from datetime import date
+from xml.etree import ElementTree as ET
+
+from simpleanidb import Anidb
+from simpleanidb.models import BaseAttribute
+from simpleanidb.models import Category
+from simpleanidb.models import Episode
+from simpleanidb.models import Picture
+from simpleanidb.models import Tag
+from simpleanidb.models import Title
 
 
 @pytest.mark.parametrize('attribute, value', (
     ('text_attr', 'bla bla bla'),
     ('number_attr', 123),
-    ('empty_attr', ''),
+    ('empty_attr', '')
 ))
 def test_base_attributes(attribute, value):
     """Test whether basic attributes get set correctly."""
-    element = etree.fromstring('<bla %s="%s"></bla>' % (attribute, str(value)))
+    element = ET.fromstring('<bla %s="%s"></bla>' % (attribute, str(value)))
     base = BaseAttribute(None, element)
 
     base._attributes(attribute)
     assert getattr(base, attribute) == str(value)
 
 
-@pytest.mark.parametrize('value',
-    ('bla bla bla', 123, False, 'false', 'FaLsE', None,))
+@pytest.mark.parametrize('value', ('bla bla bla', 123, False, 'false', 'FaLsE', None))
 def test_base_false_flags(value):
     """Check whether boolean falses are handled correctly."""
-    element = etree.fromstring('<bla flag="%s"></bla>' % value)
+    element = ET.fromstring('<bla flag="%s"></bla>' % value)
     base = BaseAttribute(None, element)
 
     base._booleans('flag', 'missing_flag')
-    assert base.flag == False
-    assert base.missing_flag == False
+    assert base.flag is False
+    assert base.missing_flag is False
 
 
 @pytest.mark.parametrize('value', (True, 'True', 'tRuE', 'true', 'TruE'))
 def test_base_true_flags(value):
     """Check whether boolean trues are handled correctly."""
-    element = etree.fromstring('<bla flag="%s"></bla>' % value)
+    element = ET.fromstring('<bla flag="%s"></bla>' % value)
     base = BaseAttribute(None, element)
 
     base._booleans('flag')
-    assert base.flag == True
+    assert base.flag is True
 
 
 @pytest.mark.parametrize('text', ('bla', '1123', 'bla<span>ble</span>'))
 def test_base_texts(text):
     """Check whether base texts are gotten correctly."""
-    element = etree.fromstring('<bla><child>%s</child></bla>' % text)
+    element = ET.fromstring('<bla><child>%s</child></bla>' % text)
     base = BaseAttribute(None, element)
 
     base._texts('child')
@@ -57,7 +61,7 @@ def test_base_texts(text):
     '', '<child></child>', '<child><span>1123</span></child>'))
 def test_base_empty_texts(child):
     """Check whether empty texts are returned as None."""
-    element = etree.fromstring('<bla>%s</bla>' % child)
+    element = ET.fromstring('<bla>%s</bla>' % child)
     base = BaseAttribute(None, element)
 
     base._texts('child')
@@ -65,7 +69,7 @@ def test_base_empty_texts(child):
 
 
 def test_title():
-    element = etree.fromstring(
+    element = ET.fromstring(
         '<title xml:lang="x-jat" type="main">Gintama (2015)</title>'
     )
     title = Title(None, element)
@@ -75,7 +79,7 @@ def test_title():
 
 
 def test_category():
-    element = etree.fromstring(
+    element = ET.fromstring(
         '''<category id="12" weight="123" hentai="true">
             <name>category1</name>
             <description>description</description>
@@ -84,13 +88,13 @@ def test_category():
     cat = Category(None, element)
     assert cat.id == '12'
     assert cat.weight == '123'
-    assert cat.hentai == True
+    assert cat.hentai is True
     assert cat.name == 'category1'
     assert cat.description == 'description'
 
 
 def test_tag():
-    element = etree.fromstring(
+    element = ET.fromstring(
         '''<tag id="30" weight="20" localspoiler="false" globalspoiler="false"
                 verified="true" update="2014-09-10">
             <name>meta tags</name>
@@ -101,9 +105,9 @@ def test_tag():
     tag = Tag(None, element)
     assert tag.id == '30'
     assert tag.weight == '20'
-    assert tag.localspoiler == False
-    assert tag.globalspoiler == False
-    assert tag.verified == True
+    assert tag.localspoiler is False
+    assert tag.globalspoiler is False
+    assert tag.verified is True
     assert tag.update == date(2014, 9, 10)
     assert tag.count == 20
     assert tag.name == 'meta tags'
@@ -111,7 +115,7 @@ def test_tag():
 
 
 def test_picture():
-    element = etree.fromstring('<picture>166237.jpg</picture>')
+    element = ET.fromstring('<picture>166237.jpg</picture>')
     pic = Picture(None, element)
     assert pic.url == 'http://img7.anidb.net/pics/anime/166237.jpg'
 
@@ -122,7 +126,7 @@ def test_episode():
         '<title xml:lang="fr">Les deux singes</title>',
         '<title xml:lang="x-jat">Futari no Etekou</title>',
     ]
-    element = etree.fromstring(
+    element = ET.fromstring(
         '''<episode id="172424" update="2015-10-08">
                 <epno type="1">28</epno>
                 <length>25</length>
@@ -147,7 +151,7 @@ def test_episode_titles():
         '<title xml:lang="fr">Les deux singes</title>',
         '<title xml:lang="x-jat">Futari no Etekou</title>',
     ]
-    element = etree.fromstring(
+    element = ET.fromstring(
         '''<episode id="172424" update="2015-10-08">
                 <epno type="1">28</epno>
                 <length>25</length>
@@ -161,7 +165,7 @@ def test_episode_titles():
 
     assert str(ep.title) == 'The Two Apes'
 
-    titles = [Title(gintama, etree.fromstring(title)) for title in title_xmls]
+    titles = [Title(gintama, ET.fromstring(title)) for title in title_xmls]
     lang_titles = {title.lang: title for title in titles}
 
     for title in ep.titles:
@@ -175,4 +179,3 @@ def test_episode_titles():
     # check if specifying a language for which there is no title works
     gintama.anidb.lang = 'pl'
     assert not ep.title
-

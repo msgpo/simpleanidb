@@ -65,7 +65,7 @@ class Anime(object):
         self.synonyms = [t for t in self.titles if t.type == "synonym"]
         if xml.find("episodes") is not None:
             self.all_episodes = sorted([Episode(self, n) for n in xml.find("episodes")])
-            self.episodes = {e.number:e for e in self.all_episodes if e.type == 1}
+            self.episodes = {e.number: e for e in self.all_episodes if e.type == 1}
         if xml.find("picture") is not None:
             self.picture = Picture(self, xml.find("picture"))
         if xml.find("ratings") is not None:
@@ -85,7 +85,6 @@ class Anime(object):
             self.end_date = date_to_date(xml.find("enddate").text)
         if xml.find("description") is not None:
             self.description = xml.find("description").text
-
 
     @property
     def title(self):
@@ -228,4 +227,3 @@ class Episode(BaseAttribute):
         if self.number < other.number:
             return -1
         return 1
-
