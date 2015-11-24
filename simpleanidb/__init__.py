@@ -3,15 +3,16 @@ import os
 import xml.etree.cElementTree as etree
 from datetime import datetime, timedelta
 
-from appdirs import *
+from appdirs import user_cache_dir
 
-from .helper import download_file
-from .models import *
+from simpleanidb.helper import download_file
+from simpleanidb.models import Anime
 
 __version__ = "0.1.0"
 __author__ = "Dennis Lutter"
 
 ANIME_LIST_URL = "http://anidb.net/api/anime-titles.xml.gz"
+
 
 class Anidb(object):
 
