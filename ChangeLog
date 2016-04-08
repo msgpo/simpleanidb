@@ -1,6 +1,9 @@
 CHANGES
 =======
 
+* Updated ChangeLog
+* Fixes and PEP8 improvements and some new methods that provide better error handling
+* tox
 * Add tests
 * Updated xml tag definitions
 * future warning fix

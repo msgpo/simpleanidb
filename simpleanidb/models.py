@@ -3,13 +3,13 @@ import requests
 import xml.etree.ElementTree as ET
 
 from .helper import date_to_date
+from .exceptions import GeneralError
 
 
-class Anime(object):
-
-    def __init__(self, anidb, id, auto_load=True, xml=None):
+class Anime(object):  # pylint: disable=too-many-instance-attributes
+    def __init__(self, anidb, aid, auto_load=True, xml=None):
         self.anidb = anidb
-        self.id = id
+        self.aid = aid
         self.titles = []
         self.synonyms = []
         self.all_episodes = []
@@ -32,7 +32,7 @@ class Anime(object):
             self.load()
 
     def __repr__(self):
-        return "<Anime:{} loaded:{}>".format(self.id, self.loaded)
+        return "<Anime:{0} loaded:{1}>".format(self.aid, self.loaded)
 
     @property
     def loaded(self):
@@ -49,19 +49,20 @@ class Anime(object):
             "client": "adbahttp",
             "clientver": 100,
             "protover": 1,
-            "aid": self.id
+            "aid": self.aid
         }
-        r = requests.get("http://api.anidb.net:9001/httpapi", params=params)
-        self._xml = ET.fromstring(r.text.encode("UTF-8"))
+
+        self._xml = self.anidb._get_url("http://api.anidb.net:9001/httpapi", params=params)
+
         self.fill_from_xml(self._xml)
         self._loaded = True
 
-    def fill_from_xml(self, xml):
+    def fill_from_xml(self, xml):  # pylint: disable=too-many-branches
         if xml.find("titles") is not None:
             self.titles = [Title(self, n) for n in xml.find("titles")]
         else:
             self.titles = [Title(self, n) for n in xml.findall("title")]
-            return
+            # return # returning from here will result in not loading attribute information for anime lists like hot_animes
         self.synonyms = [t for t in self.titles if t.type == "synonym"]
         if xml.find("episodes") is not None:
             self.all_episodes = sorted([Episode(self, n) for n in xml.find("episodes")])
@@ -78,7 +79,7 @@ class Anime(object):
         if xml.find("categories") is not None:
             self.categories = [Category(self, c) for c in xml.find("categories")]
         if xml.find("tags") is not None:
-            self.tags = sorted([Tag(self, t) for t in xml.find("tags")])
+            self.tags = sorted([Tag(self, t) for t in xml.find("tags") if t.text.strip()])
         if xml.find("startdate") is not None:
             self.start_date = date_to_date(xml.find("startdate").text)
         if xml.find("enddate") is not None:
@@ -90,11 +91,11 @@ class Anime(object):
     def title(self):
         return self.get_title("main")
 
-    def get_title(self, type=None, lang=None):
-        if not type:
-            type = "main"
+    def get_title(self, title_type=None, lang=None):
+        if not title_type:
+            title_type = "main"
         for t in self.titles:
-            if t.type == type:
+            if t.type == title_type:
                 return t
         if not lang:
             lang = self.anidb.lang
@@ -103,7 +104,7 @@ class Anime(object):
                 return t
 
 
-class BaseAttribute(object):
+class BaseAttribute(object):  # pylint: disable=too-few-public-methods
 
     def __init__(self, anime, xml_node):
         self.anime = anime
@@ -139,13 +140,13 @@ class BaseAttribute(object):
         return self._xml.text
 
     def __repr__(self):
-        return u"<{}: {}>".format(
+        return u"<{0}: {1}>".format(
             self.__class__.__name__,
             unicode(self)
         )
 
 
-class Category(BaseAttribute):
+class Category(BaseAttribute):  # pylint: disable=too-few-public-methods
 
     def __init__(self, anime, xml_node):
         super(Category, self).__init__(anime, xml_node)
@@ -154,7 +155,7 @@ class Category(BaseAttribute):
         self._texts('name', 'description')
 
 
-class Tag(BaseAttribute):
+class Tag(BaseAttribute):  # pylint: disable=too-few-public-methods
 
     def __init__(self, anime, xml_node):
         super(Tag, self).__init__(anime, xml_node)
@@ -171,7 +172,7 @@ class Tag(BaseAttribute):
         return self.count - other.count
 
 
-class Title(BaseAttribute):
+class Title(BaseAttribute):  # pylint: disable=too-few-public-methods
 
     def __init__(self, anime, xml_node):
         super(Title, self).__init__(anime, xml_node)
@@ -180,14 +181,14 @@ class Title(BaseAttribute):
         self.type = self._xml.attrib.get("type")
 
 
-class Picture(BaseAttribute):
+class Picture(BaseAttribute):  # pylint: disable=too-few-public-methods
 
     def __str__(self):
         return self.url
 
     @property
     def url(self):
-        return "http://img7.anidb.net/pics/anime/{}".format(self._xml.text)
+        return "http://img7.anidb.net/pics/anime/{0}".format(self._xml.text)
 
 
 class Episode(BaseAttribute):
@@ -216,7 +217,7 @@ class Episode(BaseAttribute):
                 return t
 
     def __str__(self):
-        return u"{}: {}".format(self.number, self.title)
+        return u"{0}: {1}".format(self.number, self.title)
 
     def __cmp__(self, other):
         if self.type > other.type:
