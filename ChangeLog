@@ -1,7 +1,9 @@
 CHANGES
 =======
 
-* Updated ChangeLog
+* Updated lib with addition of nr of votes in count_permanent and count_temporary
+* Import cleaning
+* Added model attributes count_permanent and count_temporary
 * Fixes and PEP8 improvements and some new methods that provide better error handling
 * tox
 * Add tests
