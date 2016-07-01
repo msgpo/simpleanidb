@@ -1,6 +1,9 @@
 CHANGES
 =======
 
+* Fixed search by aid and by tvdbid
+* Removed unused imports
+* Added search by tvdbid and aid
 * Updated lib with addition of nr of votes in count_permanent and count_temporary
 * Import cleaning
 * Added model attributes count_permanent and count_temporary
