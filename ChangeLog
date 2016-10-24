@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Added method for refreshing the xml_lists
 * Updated Changelog
 * Fixed search by aid and by tvdbid
 * Removed unused imports
