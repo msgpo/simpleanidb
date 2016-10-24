@@ -38,10 +38,6 @@ class Anidb(object):
         self.session = session or requests.Session()
         self.session.headers.setdefault('user-agent', 'simpleanidb/{0}.{1}.{2}'.format(*__version__))
 
-        self.anime_titles_path = os.path.join(
-            self._cache_dir, 'anime-titles.xml.gz')
-        self.anime_list_path = os.path.join(
-            self._cache_dir, 'anime-list.xml.gz')
         self.auto_download = auto_download
         self._xml_titles = self._xml = None
         self._xml_list = None
@@ -73,18 +69,9 @@ class Anidb(object):
         local_file = os.path.join(self._cache_dir, url.split('/')[-1])
         xml = None
 
-        if not force:
-            try:
-                xml = self._read_file(local_file)
-            except IOError:
-                if self.auto_download:
-                    self.download_anime_list(local_file, url)
-                    xml = self._read_file(local_file)
-                else:
-                    raise
-        else:
-            self.download_anime_list(local_file, url)
-            xml = self._read_file(local_file)
+        if self.auto_download:
+            self.download_anime_list(local_file, url, force)
+        xml = self._read_file(local_file)
 
         return xml
 
