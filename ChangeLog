@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Updated Changelog
 * Fixed search by aid and by tvdbid
 * Removed unused imports
 * Added search by tvdbid and aid
